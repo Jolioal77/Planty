@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PLANETY</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  .ble-slider-wrap {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    vertical-align: middle;
+  }
+  .ble-slider-label { position: relative; cursor: pointer; user-select: none; }
+  .ble-slider { appearance: none; width: 44px; height: 24px; background: #e6ebf3; border-radius: 12px; position: relative; outline: none; transition: background 0.2s; margin-left: 8px; margin-right: 0; }
+  .ble-slider:checked { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .ble-slider-ui { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 44px; height: 24px; pointer-events: none; }
+  .ble-slider-label .ble-slider { z-index: 1; }
+  .ble-slider-label .ble-slider-ui::before { content: ''; position: absolute; left: 2px; top: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(60,80,120,0.08); transition: left 0.22s cubic-bezier(.4,0,.2,1), background 0.2s; }
+  .ble-slider:checked + .ble-slider-ui::before { left: 22px; background: var(--accent-2); }
+  :root{
+    --bg-grad:linear-gradient(135deg,#1a1a1a 0%,#333333 100%);
+    --panel:#ffffff;
+    --text:#0f0f0f;
+    --muted:#666666;
+    --border:#cccccc;
+    --accent:#000000;
+    --accent-2:#4a4a4a;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+    --chip:#f0f0f0;
+    --radius:18px;
+    --shadow:0 20px 50px rgba(0,0,0,.15);
+    --shadow-soft:0 8px 24px rgba(0,0,0,.12);
+    --sidebar:56px;
+    --header:100px;
+  }
+
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;color:var(--text);background:var(--bg-grad);}
+.app {
+  display: block; 
+}
+
+.app > div {
+  margin-left: var(--sidebar); 
+}
+
+  .sidebar {
+    position: fixed;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    width: var(--sidebar);
+    height: 60vh;
+    min-height: 220px;
+    background: rgba(255,255,255,0.06);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 18px 6px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.28);
+    z-index: 300;
+  }
+
+  .nav{display:flex;flex-direction:column;gap:12px;margin-top:0;align-items:center;justify-content:center}
+  .nav a{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;text-decoration:none;color:var(--muted);border:1px solid transparent;transition:.18s}
+  .nav a:hover{background:var(--chip);color:var(--accent);border-color:var(--border)}
+  .nav a.active{background:var(--chip);color:var(--accent);border-color:var(--accent)}
+
+  header{height:var(--header);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:fixed;top:10px;left:calc(var(--sidebar) + 28px);right:24px;background:rgba(255,255,255,0.06);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:18px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 10px 30px rgba(0,0,0,0.18);z-index:250;gap:20px;}
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); }
+  .ml-2 { margin-left: 2px; }
+  .ml-sidebar { margin-left: var(--sidebar); }
+  .mt-10 { margin-top: 10px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-6 { margin-top: 6px; }
+  .w-100 { width: 100%; }
+  .fs-13 { font-size: 13px; }
+  .fw-600 { font-weight: 600; }
+  .fs-108 { font-size: 1.08rem; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .align-start { align-items: flex-start; }
+  .gap-18 { gap: 18px; }
+  .gap-12 { gap: 12px; }
+  
+  .title{display:flex;align-items:center;gap:15px;flex:1}
+  .title h1{font-size:20px;margin:0}
+  .chip{font-size:12px;padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--muted)}
+
+  .btn{appearance:none;border:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:.2s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .btn.secondary{background:var(--accent-2)}
+  .btn.warn{background:var(--warn);color:#111827}
+
+  main{max-width:1100px;margin:calc(var(--header) + 36px) auto 24px;padding:0 18px;width:100%}
+  .grid{display:grid;gap:18px}
+  .grid.cols-2{grid-template-columns:1.2fr .8fr}
+  @media (max-width:900px){.grid.cols-2{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .card h2{margin:0 0 10px 0;font-size:18px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .stat{background:linear-gradient(180deg,rgba(200,200,200,.08),transparent);border:1px dashed var(--border);border-radius:14px;padding:12px}
+  
+  .stat .label{font-size:12px;color:var(--muted)}
+  .stat .value{font-size:22px;font-weight:800;margin-top:2px}
+
+  #aiChatLog{height:260px;overflow:auto;border-radius:12px;border:1px solid var(--border);padding:10px;background:rgba(127,148,196,.06)}
+  .bubble{max-width:80%;display:inline-block;padding:8px 12px;border-radius:12px;margin:6px 0}
+  .bubble.ai{background:var(--chip);border:1px solid var(--border)}
+  .bubble.user{background:linear-gradient(145deg,var(--accent-2),#15cf98);color:#032b21}
+  .chat-input-row{display:flex;gap:8px;align-items:center}
+  .chat-input{
+    flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;background:transparent;outline:none;box-shadow:none
+  }
+  .chat-input:focus{box-shadow:0 6px 18px rgba(79,140,255,.08);border-color:var(--accent)}
+  .chat-send-btn{padding:10px 14px;border-radius:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:700}
+  .chat-send-btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+
+  #suggestions p{margin:.4rem 0;padding:.4rem .6rem;background:rgba(16,185,129,.06);border:1px dashed var(--border);border-radius:10px}
+
+  .tourOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none}
+  .tourOverlay.visible{display:block}
+  #tourSpotlight{position:fixed;border:3px solid var(--accent);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 24px 6px var(--accent);z-index:101;pointer-events:none;display:none}
+  #tourSpotlight.visible{display:block}
+  .tourBox{position:absolute;left:20px;top:80px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;z-index:102;box-shadow:var(--shadow);max-width:340px}
+
+  footer{margin:16px 0;color:var(--muted);text-align:center}
+</style>
+</head>
+<body class="">
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <nav class="nav">
+        <a href="#" class="active" data-section="dashboard" title="Dashboard">🏠</a>
+        <a href="#" data-section="progress"  title="Progress">📈</a>
+        <a href="#" data-section="suggestions" title="Suggestions">💡</a>
+        <a href="#" data-section="chat" title="AI">🤖</a>
+        <a href="#" data-section="settings" title="Settings">⚙️</a>
+      </nav>
+    </aside>
+
+    <div>
+    <header>
+      <img src="PLANETY.png" alt="PLANETY Logo" style="height:112px;width:auto;object-fit:contain;transform:translateY(-6px);">
+        <div class="title">
+          <span class="chip" id="statusChip">Not connected</span>
+        </div>
+        <div class="row">
+          <button id="logoutBtn" class="btn warn">Logout</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="dashboardSection" class="grid cols-2">
+          <div class="card" id="cardStats">
+            <h2>Live Readings</h2>
+            <div class="stats">
+              <div class="stat">
+                <div class="label">Temperature</div>
+                <div class="value"><span id="tempVal">--</span> °C</div>
+              </div>
+              <div class="stat">
+                <div class="label">Light</div>
+                <div class="value"><span id="lightVal">--</span> lx</div>
+              </div>
+              <div class="stat">
+                <div class="label">Soil Moisture</div>
+                <div class="value"><span id="soilVal">--</span> %</div>
+              </div>
+               <div class="stat">
+                <div class="label">Humidity</div>
+                <div class="value"><span id="humidVal">--</span> %</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-wide" id="trendSuggestionsCard">
+            <div class="row between">
+              <h2>7 Day Trend</h2>
+              <div class="row">
+                <button id="saveTipBtn" class="btn">Save Suggestion</button>
+                <button id="exportPdfBtn" class="btn ghost ml-8">Download PDF</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="weekChart"></canvas>
+            </div>
+            <div id="reportText" class="mt-8" style="color:var(--muted)"></div>
+            <hr />
+            <h3 class="mt-8">Suggestions</h3>
+            <div id="suggestions"></div>
+          </div>
+        </section>
+
+    <!-- Progress -->
+  <section id="progressSection" style="display:none;">
+          <div class="card">
+            <h2>Saved Suggestions</h2>
+            <div class="row">
+              <div class="chip">Saved days: <span id="savedDays">0</span></div>
+              <button id="clearSuggestions" class="btn ghost">Clear</button>
+            </div>
+          </div>
+          <br>
+          <div class="card">
+            <h2>Suggestions for today</h2>
+    <div id="suggestionsSaved">No suggestions yet.</div>
+          </div>
+        </section>
+
+    <!-- Suggestions (quick view) -->
+  <section id="suggestionsSection" style="display:none;">
+          <div class="card">
+            <h2>Latest Tips</h2>
+    <div id="suggestionsQuick">No tips yet.</div>
+          </div>
+        </section>
+
+    <!-- Chat -->
+  <section id="chatSection" style="display:none;">
+          <div class="card">
+            <h2>PLANETY AI</h2>
+            <div id="aiChatLog" aria-live="polite" aria-atomic="false"></div>
+            <div class="row mt-10 chat-input-row">
+              <label for="aiChatInput" class="hidden">Chat input</label>
+              <input id="aiChatInput" class="chat-input" aria-label="Ask PLANETY about your plant" placeholder="Ask me about your plant… (e.g., leaves turning yellow)" />
+              <button id="aiChatSend" class="chat-send-btn" title="Send message">Send</button>
+            </div>
+          </div>
+        </section>
+
+    <!-- Settings -->
+  <section id="settingsSection" style="display:none;">
+          <div class="card">
+            <h2>Settings</h2>
+            <p class="chip">All data is stored locally on your device.</p>
+            <div class="row mt-10 flex flex-col align-start gap-18">
+              <div class="w-100">
+                <label class="ble-slider-label fw-600 fs-108">
+                  <span id="bleSliderLabel">Bluetooth: Disconnected</span>
+                </label>
+                <div class="mt-8">
+            <!-- Single connect/disconnect button that mirrors the slider state -->
+            <button id="bleConnectBtn" class="btn">Connect Bluetooth</button>
+            <!-- Web Serial fallback: connect to ESP32 over USB serial from browser -->
+            <button id="serialConnectBtn" class="btn ghost ml-8">Connect Serial</button>
+                </div>
+                <div class="fs-13 mt-6" style="color:var(--muted); margin-left:2px;">
+                  Toggle to connect or disconnect your Planty device via Bluetooth. This uses Web Bluetooth and works best in Chrome/Edge on desktop.
+                </div>
+                <div class="fs-12 mt-6" style="color:var(--muted); margin-left:2px;">
+                  Tip: select the ESP32 advertisement (e.g. "ESP32-Planty") or the service UUID <code>fd418ddc-13e2-4fd1-8c29-dc51a06994c6</code> in the browser pairing dialog.
+                </div>
+              </div>
+              <button id="resetApp" class="btn warn mt-10">Reset App (Local Data)</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>© 2025 Planty</footer>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   CONFIG / CONSTANTS
+========================= */
+const SERVICE_UUID = 'fd418ddc-13e2-4fd1-8c29-dc51a06994c6';
+const CHARACTERISTIC_UUID = 'ad5e200a-dc37-4724-9e16-fd0416c17924';
+const MAX_POINTS = 50;
+
+/* =========================
+   AUTH (localStorage + SHA256)
+========================= */
+function bufferToHex(buf){return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function sha256(str){
+  const data=new TextEncoder().encode(str);
+  if(window.crypto && crypto.subtle && crypto.subtle.digest){
+    const hash=await crypto.subtle.digest('SHA-256',data);
+    return bufferToHex(hash);
+  }
+  // Fallback: simple non-cryptographic hash for demo / file:// environments
+  let h=2166136261>>>0;
+  for(let i=0;i<data.length;i++){h=((h^data[i])>>>0)*16777619>>>0}
+  return ('00000000'+(h>>>0).toString(16)).slice(-8);
+}
+function getUsers(){return JSON.parse(localStorage.getItem('planty_users')||'{}')}
+function saveUsers(u){localStorage.setItem('planty_users',JSON.stringify(u))}
+function setCurrentUser(u){localStorage.setItem('planty_current_user',u)}
+function getCurrentUser(){return localStorage.getItem('planty_current_user')}
+
+
+const appEl=document.getElementById('app');
+function openApp(){
+    // Remove the login overlay line if it doesn't exist
+    // loginOverlay.style.display='none';
+    appEl.style.display='grid';
+}
+/* Auto-login if a user exists */
+if(getCurrentUser()){ openApp(); }
+
+/* =========================
+   NAV / THEME / UI
+========================= */
+const sections={
+  dashboard:document.getElementById('dashboardSection'),
+  progress:document.getElementById('progressSection'),
+  suggestions:document.getElementById('suggestionsSection'),
+  chat:document.getElementById('chatSection'),
+  settings:document.getElementById('settingsSection')
+};
+document.querySelectorAll('.nav a').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    try{
+      document.querySelectorAll('.nav a').forEach(n=>n.classList.remove('active'));
+      a.classList.add('active');
+      const sec=a.dataset.section;
+      // Hide only sections that exist
+      Object.values(sections).forEach(s=>{ if(s) s.style.display='none'; });
+      // Show the requested section if present
+      if(sections[sec]){
+        sections[sec].style.display='';
+        // ensure viewport is scrolled to top of content
+        window.scrollTo(0,0);
+      } else {
+        console.warn('Requested section not found:', sec);
+      }
+    }catch(err){ console.warn('Navigation click handler error', err); }
+  });
+});
+const logoutBtnEl = document.getElementById('logoutBtn');
+if(logoutBtnEl) logoutBtnEl.addEventListener('click',()=>{
+  localStorage.removeItem('planty_current_user');
+  location.reload();
+});
+// Dark mode removed: no theme toggle behavior
+
+const resetBtnEl = document.getElementById('resetApp');
+if(resetBtnEl) resetBtnEl.addEventListener('click',()=>{ localStorage.clear(); location.reload(); });
+
+/* =========================
+   CHART
+========================= */
+let weekChart = null;
+const weekCanvas = document.getElementById('weekChart');
+if(weekCanvas){
+  const chartCtx = weekCanvas.getContext('2d');
+  weekChart = new Chart(chartCtx,{
+  type:'line',
+  data:{labels:[],datasets:[
+    {label:'Temp (°C)',data:[],borderWidth:2,tension:.25},
+    {label:'Light (lx)',data:[],borderWidth:2,tension:.25},
+    {label:'Soil (%)',data:[],borderWidth:2,tension:.25},
+    {label:'Humidity (%)', data:[],borderWidth:2,tension:.25}
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{boxWidth:10}}},
+    scales:{
+      y:{type:'linear',position:'left'},
+      y1:{type:'linear',position:'right',grid:{drawOnChartArea:false}},
+      y2:{type:'linear',position:'right',grid:{drawOnChartArea:false}, ticks: { display: false }}
+    }
+  }
+});
+/* Assign y-axes */
+weekChart.data.datasets[0].yAxisID='y';   // temp
+weekChart.data.datasets[1].yAxisID='y2';  // light
+weekChart.data.datasets[2].yAxisID='y1';  // soil
+weekChart.data.datasets[3].yAxisID='y1';  // humidity
+
+function addPoint(t,l,s,h){
+  // t,l,s,h can be numbers or objects {value,unit}; charts need numeric values
+  const toNum = x => (x && typeof x === 'object' ? Number(x.value) : Number(x));
+  const ts=new Date().toLocaleTimeString();
+  const lbls=weekChart.data.labels;
+  const ds=weekChart.data.datasets;
+  lbls.push(ts);
+  ds[0].data.push(toNum(t));
+  ds[1].data.push(toNum(l));
+  ds[2].data.push(toNum(s));
+  // humidity may be undefined/null if payload doesn't include it
+  ds[3].data.push((h!==undefined && h!==null) ? toNum(h) : null);
+  if(lbls.length>MAX_POINTS){
+    lbls.shift(); ds.forEach(d=>d.data.shift());
+  }
+  weekChart.update();
+  // Build a readable report text using units if available
+  const tDisplay = (t && typeof t==='object') ? `${t.value} ${t.unit}` : `${t} °C`;
+  const lDisplay = (l && typeof l==='object') ? `${l.value} ${l.unit}` : `${l} lx`;
+  const sDisplay = (s && typeof s==='object') ? `${s.value} ${s.unit}` : `${s} %`;
+  const hDisplay = (h && typeof h==='object') ? `${h.value} ${h.unit}` : (h!==undefined && h!==null ? `${h} %` : null);
+  const humPart = hDisplay ? ` · Humidity ${hDisplay}` : '';
+  document.getElementById('reportText').textContent = `Latest → Temp ${tDisplay} · Light ${lDisplay} · Soil ${sDisplay}${humPart}`;
+}
+
+/* =========================
+   DASHBOARD / STATE
+========================= */
+const statusChip=document.getElementById('statusChip');
+const tempVal=document.getElementById('tempVal');
+const lightVal=document.getElementById('lightVal');
+const soilVal=document.getElementById('soilVal');
+const humidVal=document.getElementById('humidVal');
+const lastUpdate=document.getElementById('lastUpdate');
+const suggestionsDiv=document.getElementById('suggestions');
+const suggestionsQuick=document.getElementById('suggestionsQuick');
+
+let suggestions=[];
+let savedDays=0;
+const savedDaysEl = document.getElementById('savedDays');
+if(savedDaysEl) savedDaysEl.textContent=savedDays;
+
+// BLE UI elements and state
+let bleConnected = false;
+const bleSliderLabel = document.getElementById('bleSliderLabel');
+const bleConnectBtn = document.getElementById('bleConnectBtn');
+const serialConnectBtn = document.getElementById('serialConnectBtn');
+
+// Saved readings (one per day, up to 7 days). Force-saves by user are stored here too.
+let savedReadings = [];
+let lastReading = null; // most recent live reading (updated by updateUI)
+
+function loadSavedReadings(){
+  try{
+    savedReadings = JSON.parse(localStorage.getItem('planty_savedReadings')||'[]') || [];
+  }catch(e){ savedReadings = []; }
+  savedDays = savedReadings.length;
+  if(savedDaysEl) savedDaysEl.textContent = savedDays;
+}
+
+function saveSavedReadings(){
+  localStorage.setItem('planty_savedReadings', JSON.stringify(savedReadings));
+  savedDays = savedReadings.length;
+  if(savedDaysEl) savedDaysEl.textContent = savedDays;
+}
+
+function getTodayStr(){ return (new Date()).toISOString().slice(0,10); }
+
+function renderSavedReadings(){
+  const savedEl = document.getElementById('suggestionsSaved');
+  if(!savedEl) return;
+  if(!savedReadings.length){ savedEl.innerHTML = 'No saved readings yet.'; return; }
+  const html = savedReadings.map(r=>{
+    const note = r.note ? `<div style="color:var(--muted);font-size:12px;margin-top:6px;">${r.note}</div>` : '';
+    const forced = r.forced ? ' <strong>(forced)</strong>' : '';
+    const tUnit = r.tUnit || '°C';
+    const lUnit = r.lUnit || 'lx';
+    const sUnit = r.sUnit || '%';
+    const hUnit = r.hUnit || '%';
+    const humPart = (r.h!==undefined&&r.h!==null) ? (` · Humidity: ${r.h} ${hUnit}`) : '';
+    return `<div style="margin-bottom:8px">📅 <strong>${r.date}</strong>${forced}<div>Temp: ${r.t} ${tUnit} · Light: ${r.l} ${lUnit} · Soil: ${r.s} ${sUnit}${humPart}</div>${note}</div>`;
+  }).join('');
+  savedEl.innerHTML = html;
+}
+
+
+function renderSuggestions(){
+  const html = suggestions.length
+    ? suggestions.map(s=>`<p>🌱 ${s}</p>`).join('')
+    : 'No suggestions yet.';
+  // primary suggestions area on dashboard
+  if(suggestionsDiv) suggestionsDiv.innerHTML = html;
+  // quick suggestions view
+  if(suggestionsQuick) suggestionsQuick.innerHTML = html;
+  // saved suggestions in Progress
+  const savedEl = document.getElementById('suggestionsSaved');
+  if(savedEl) savedEl.innerHTML = html;
+}
+
+const saveTipBtn = document.getElementById('saveTipBtn');
+
+const clearSuggestionsBtn = document.getElementById('clearSuggestions');
+if(clearSuggestionsBtn){
+  clearSuggestionsBtn.addEventListener('click',()=>{
+    suggestions=[]; savedDays=0;
+    if(savedDaysEl) savedDaysEl.textContent=savedDays;
+    renderSuggestions();
+  });
+}
+
+/* =========================
+   PDF EXPORT
+========================= */
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+if(exportPdfBtn){
+  exportPdfBtn.addEventListener('click',()=>{
+    const {jsPDF}=window.jspdf; const doc=new jsPDF();
+    doc.setFont('helvetica','bold'); doc.setFontSize(18);
+    doc.text('Planty Progress Report',14,18);
+    doc.setFont('helvetica','normal'); doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleString()}`,14,28);
+  const humidText = humidVal ? `, H=${humidVal.textContent}` : '';
+  doc.text(`Last Reading: T=${tempVal.textContent}, L=${lightVal.textContent}, S=${soilVal.textContent}${humidText}`,14,36);
+    doc.text('Saved Suggestions:',14,48);
+    if(!suggestions.length){ doc.text('— none —',22,56); }
+    suggestions.forEach((s,i)=>{ doc.text(`${i+1}. ${s}`,22,56+i*8); });
+    doc.save('Planty_Report.pdf');
+  });
+}
+
+/* =========================
+   BLE LIVE (Web Bluetooth)
+========================= */
+let bleDevice=null, bleChar=null;
+// Web Serial state
+let serialPort = null;
+let serialReader = null;
+let serialKeepReading = false;
+
+function setStatus(txt, ok=false){
+  if(typeof statusChip !== 'undefined' && statusChip){
+    statusChip.textContent=txt;
+    statusChip.style.borderColor = ok? 'transparent':'';
+    statusChip.style.background = ok? 'linear-gradient(145deg,var(--accent-2),#18d3a1)':'var(--chip)';
+    statusChip.style.color = ok? '#04261e':'';
+  }
+  updateBleUI(ok);
+}
+
+async function connectBLE(){
+  if(!navigator.bluetooth){ alert('Web Bluetooth not supported in this browser. Use Chrome/Edge.'); updateBleUI(false); return; }
+  try{
+    setStatus('Pairing…');
+    const device=await navigator.bluetooth.requestDevice({
+      filters:[{services:[SERVICE_UUID]}],
+      optionalServices:[SERVICE_UUID]
+    });
+    bleDevice=device;
+    bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+    const server=await device.gatt.connect();
+    const service=await server.getPrimaryService(SERVICE_UUID);
+    const characteristic=await service.getCharacteristic(CHARACTERISTIC_UUID);
+    bleChar=characteristic;
+    await bleChar.startNotifications();
+    bleChar.addEventListener('characteristicvaluechanged', handleNotification);
+    // Perform one immediate read to populate UI with current sensor values from ESP32
+    try{
+      const initial = await bleChar.readValue();
+      // emulate a characteristicvaluechanged event for reuse of handler
+      handleNotification({ target: { value: initial } });
+    }catch(e){ console.debug('Initial read failed (device may only notify):', e); }
+    setStatus(`Connected: ${device.name||'ESP32'}`, true);
+  }catch(err){
+    console.error(err);
+  setStatus('Connection failed');
+  updateBleUI(false);
+    alert('BLE connection failed. Check UUIDs and device is advertising.');
+  }
+}
+function onDisconnected(){
+  console.log('Device disconnected.');
+  // Call the main disconnect function to ensure all state is cleaned up.
+  disconnectBLE();
+}
+async function disconnectBLE(){
+  try{
+    if(bleChar){ await bleChar.stopNotifications(); bleChar.removeEventListener('characteristicvaluechanged', handleNotification); bleChar=null; }
+    if(bleDevice?.gatt?.connected){ bleDevice.gatt.disconnect(); }
+  }catch(e){ console.warn(e); }
+  setStatus('Disconnected'); updateBleUI(false);
+}
+
+/* =========================
+   WEB SERIAL FALLBACK
+   Reads newline-delimited JSON lines from USB serial and forwards to parser
+========================= */
+async function connectSerial(){
+  if(!('serial' in navigator)){
+    alert('Web Serial API not supported in this browser. Use Chrome/Edge with experimental flags or a recent stable release.');
+    return;
+  }
+  try{
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 115200 });
+    setStatus('Serial connected', true);
+    if(serialConnectBtn) serialConnectBtn.textContent = 'Disconnect Serial';
+    // Start reading loop
+    serialKeepReading = true;
+    const decoder = new TextDecoderStream();
+    const readableStreamClosed = serialPort.readable.pipeTo(decoder.writable);
+    const reader = decoder.readable.getReader();
+    serialReader = reader;
+    let buffer = '';
+    while(serialKeepReading){
+      const { value, done } = await reader.read();
+      if(done) break;
+      if(value){
+        buffer += value;
+        let idx;
+        while((idx = buffer.indexOf('\n')) >= 0){
+          const line = buffer.slice(0, idx).trim();
+          buffer = buffer.slice(idx+1);
+          if(!line) continue;
+          // Forward the text line directly to the handler
+          handleNotification(line);
+        }
+      }
+    }
+  }catch(e){ console.error('Serial connect failed', e); setStatus('Serial failed'); }
+}
+
+async function disconnectSerial(){
+  try{
+    serialKeepReading = false;
+    if(serialReader){ await serialReader.cancel(); serialReader.releaseLock(); serialReader=null; }
+    if(serialPort){ await serialPort.close(); serialPort=null; }
+  }catch(e){ console.warn(e); }
+  if(serialConnectBtn) serialConnectBtn.textContent = 'Connect Serial';
+  setStatus('Serial disconnected');
+}
+
+// Attach serial connect button
+if(serialConnectBtn){
+  serialConnectBtn.addEventListener('click', ()=>{
+    if(serialPort){ disconnectSerial(); } else { connectSerial(); }
+  });
+}
+
+
+
+/* Parse notifications: expect JSON like {"temperature":24.1,"light":550,"soilMoisture":40}
+   Fallback CSV: "24.1,550,40"
+*/
+function handleNotification(e){
+  let txt;
+  if (typeof e === 'string') {
+    // Data is from Web Serial
+    txt = e;
+  } else {
+    // Data is from Web Bluetooth (an event with target.value as DataView)
+    txt = new TextDecoder().decode(e.target.value).trim();
+  }
+
+  try{
+    // We'll accept JSON objects where values may include units, e.g. "24.1 °C", "550 lx", "40 %"
+    function extractNumberAndUnit(v){
+      if(v===undefined || v===null) return { value: null, unit: '' };
+      // If already a number
+      if(typeof v === 'number') return { value: v, unit: '' };
+      // If string like "24.1 °C" or "550 lx" or "40 %"
+      const str = String(v).trim();
+      // Match a leading number (int or float, optional sign) and capture rest as unit
+      const m = str.match(/^([-+]?\d*\.?\d+)\s*(.*)$/);
+      if(m){
+        const num = Number(m[1]);
+        const unit = (m[2]||'').trim();
+        return { value: isNaN(num)?null:num, unit };
+      }
+      // As a last resort try to coerce
+      const n = Number(str);
+      return { value: isNaN(n)?null:n, unit: '' };
+    }
+
+    let tRaw,lRaw,sRaw,hRaw;
+    if(txt.startsWith('{')){
+      const j=JSON.parse(txt);
+      tRaw = j.temperature;
+      lRaw = j.light;
+      sRaw = j.soilMoisture;
+      hRaw = j.humidity;
+    }else{
+      const parts=txt.split(/[,\s]+/).filter(Boolean);
+      // support both 3-value (t,l,s) and 4-value (t,l,s,h) payloads
+      tRaw = parts[0]; lRaw = parts[1]; sRaw = parts[2]; hRaw = parts.length>3 ? parts[3] : undefined;
+    }
+
+    const tParsed = extractNumberAndUnit(tRaw);
+    const lParsed = extractNumberAndUnit(lRaw);
+    const sParsed = extractNumberAndUnit(sRaw);
+    const hParsed = extractNumberAndUnit(hRaw);
+
+    if([tParsed.value, lParsed.value, sParsed.value].some(x=>x===null)) throw new Error('Bad payload or missing numeric values');
+
+    // Pass both numeric values and units to updateUI. updateUI will keep numeric values for charts but show units in UI and saved readings
+    updateUI({ value: tParsed.value, unit: tParsed.unit||'°C' },
+             { value: lParsed.value, unit: lParsed.unit||'lx' },
+             { value: sParsed.value, unit: sParsed.unit||'%' },
+             hParsed.value!==null ? { value: hParsed.value, unit: hParsed.unit||'%' } : null);
+  }catch(err){
+    console.warn('Failed to parse incoming value:', txt, err);
+  }
+}
+
+// Simulate feature removed
+
+/* =========================
+   AI CHAT (keyword responder)
+========================= */
+const aiResponses={
+  // ===== Greetings & Farewells =====
+  "greeting": "Hello! 🌱 How is your plant doing today? 🌞",
+  "hello": "Hi there! Ready to chat about your green friends? 🌿😊",
+  "welcome": "Welcome! Let's make your plants thrive! 🌿🌸",
+  "farewell": "Goodbye! Keep your plants happy and healthy! 🌱💚",
+  "bye": "See you later! Don’t forget to water your green friends! 💦🌱",
+  "thanks": "You're welcome! 🌱🌼 Happy planting!",
+  "motivation": "Your plants will thrive with patience and care! 🌱✨ Keep going!",
+  "reminder": "Water 💧, light 🌞, and love ❤️—your plants need all three!",
+
+  // ===== Watering & Hydration =====
+  "water": "If soil feels dry 2–3cm down, water 💦 until excess drains. Avoid leaving roots in standing water 🚫💧.",
+  "underwater": "Underwatering can cause wilting 😓 or dry leaves 🍂. Give a thorough soak 💦 and check soil regularly.",
+  "overwater": "Overwatering leads to root rot 🪦. Let soil dry 🌵 between watering and ensure proper drainage.",
+  "wateringfrequency": "Check soil moisture 💧 regularly. Different plants 🌿 need different watering intervals ⏰.",
+  "waterstress": "Signs of water stress 💦: drooping 😔, brown leaf edges 🍂, and dry soil 🌵.",
+  "soilmoisture": "Use your finger ✋ or a moisture meter to check soil. Top 2-3cm dry = time to water 💦.",
+  "waterreminder": "Don’t forget to water me! 💧🌱 Regular hydration keeps plants happy 😄.",
+  "thirsty": "Looks like I need water 💦! Check the soil and water gently 🌱 if dry.",
+  "soggysoil": "If the soil is soggy 🌊, hold off on watering 💧 and let it dry a bit 🌞.",
+
+  // ===== Light & Placement =====
+  "light": "Most indoor plants 🌿 like bright, indirect light 🌞. Rotate weekly 🔄 for even growth 🌱.",
+  "sunlight": "Too much direct sunlight 🌞 can scorch leaves 🔥, while too little light 🌑 can make plants leggy.",
+  "lowlight": "Low-light plants 🌿 like snake plants 🐍 and pothos 🍃 can tolerate dim corners 🌒.",
+  "windowplacement": "East 🌅 or west 🌇-facing windows are ideal for most indoor plants 🏠.",
+  "rotation": "Rotate plants 🌿 weekly 🔄 to ensure even growth 🌱 and prevent leaning 🪴.",
+  "sunburn": "Brown, crispy patches 🍂 = too much sun 🌞. Move to indirect light 🌤️.",
+  "shade": "Some plants 🌿, like ferns 🌿, thrive in low-light areas 🌑 or partial shade 🌥️.",
+  "growlights": "LED grow lights 💡 can supplement natural light 🌞 for indoor plants 🏠.",
+
+  // ===== Soil & Potting =====
+  "soil": "Use well-draining soil 🌱 suitable for your plant type 🌿; mix sand 🏖️ or perlite if needed.",
+  "repotting": "Repot when roots 🌱 fill the pot 🪴 or soil becomes compacted. Choose a pot 1-2 sizes larger 📏.",
+  "soilchange": "Change soil 🌱 every 1-2 years 🗓️ to refresh nutrients and prevent compaction 🪨.",
+  "potdrainage": "Ensure pots 🪴 have drainage holes 💧. Standing water 🌊 causes root rot 🪦.",
+  "soiltype": "Succulents 🌵: sandy soil 🏖️. Tropicals 🌿: rich, well-draining soil 🌱. Orchids 🌸: bark or moss 🌿.",
+  "compost": "Adding compost 🌱 improves soil fertility 🌿 and encourages healthy growth 🌱.",
+  "soilcompaction": "Loose soil 🌱 prevents root suffocation 😵. Fluff soil if it becomes compacted 🪨.",
+
+  // ===== Fertilization & Nutrition =====
+  "fertilizer": "Use a balanced liquid fertilizer 💧 at half-strength every 4 weeks 📅 during growing season 🌱.",
+  "overfertilizing": "Too much fertilizer 💣 burns roots 🪦. Stick to recommended dosage ✅.",
+  "nutrientdeficiency": "Yellowing leaves 🍂, pale growth 🌱, or stunted growth 🪴 may indicate nutrient deficiencies ⚠️.",
+  "feedingfrequency": "Feed 🌱 during active growth season 🌞. Reduce or stop ⏸️ during dormancy ❄️.",
+  "organicfertilizer": "Compost 🌱 or worm castings 🪱 improve soil naturally 🌿 without risk of chemical burn ⚡.",
+  "leafyellowing": "Yellow leaves 🍋 may indicate nitrogen deficiency. Consider a balanced fertilizer 🌱.",
+
+  // ===== Temperature & Humidity =====
+  "temperature": "Keep 18–24°C 🌡️, avoid cold drafts ❄️ and hot radiators 🔥.",
+  "heatstress": "Drooping leaves 😓 or scorched edges 🔥 may indicate heat stress. Move plant 🌱 to cooler spot ❄️.",
+  "coldstress": "Frost-sensitive plants ❄️ need protection 🌿 from temperatures below 10°C 🥶.",
+  "humidity": "Target 45–60% RH 💧 for tropicals 🌴. Group plants 🌿 together to raise local humidity 🌫️.",
+  "dryair": "Use a pebble tray 🪨💧, misting 🌫️, or humidifier 💨 to prevent low-humidity stress 😅.",
+  "wintercare": "Reduce watering 💦, avoid cold drafts ❄️, and ensure adequate light 🌞 in winter months 🗓️.",
+  "summercare": "Increase watering 💧, watch for sunburn 🌞🔥, and protect from pests 🐛 in hot months ☀️.",
+
+  // ===== Growth & Development =====
+  "newgrowth": "New leaves 🌱 mean your plant is happy 😄! Keep giving proper care 🌿.",
+  "leggy": "Leggy plants 🌿 stretch due to low light 🌑. Move to brighter spot 🌞 or prune ✂️ to encourage bushiness 🌱.",
+  "spindly": "Spindly growth 🌿 = low light 🌑 or insufficient nutrients ⚠️. Adjust care accordingly ✅.",
+  "stunted": "Slow growth 🐢 may indicate nutrient deficiency ⚠️, low light 🌑, or poor soil 🪨.",
+  "flowering": "Ensure adequate light 🌞, consistent watering 💦, and proper fertilization 🌱 for blooms 🌸.",
+  "fruiting": "Fruit-bearing plants 🍓🍎 need stable conditions 🌞🌿, full sun 🌞, and nutrient support 🌱.",
+  "growthboost": "Give proper light 🌞, water 💦, nutrients 🌱, and pruning ✂️ for best growth 🌿.",
+
+  // ===== Leaves & Foliage =====
+  "yellow": "Yellow leaves 🍋 often mean overwatering 💦 or poor drainage 🪴. Let soil dry 🌵 and check pot holes 🔎.",
+  "brown": "Brown tips 🍂 = low humidity 💧 or underwatering 💦. Try a pebble tray 🪨 or light misting 🌫️.",
+  "leafdrop": "Leaf drop 🍃 can be caused by stress 😓, light change 🌤️, or overwatering 💦. Adjust care gradually 🌱.",
+  "pale": "Pale leaves 🌿 can mean low light 🌑, nutrient deficiency ⚠️, or overwatering 💦.",
+  "leafspot": "Brown/black spots 🟤⚫ may indicate fungal infection 🍄 or overwatering 💦. Remove affected leaves ✂️.",
+  "curling": "Leaf curling 🍃 may indicate pests 🐛, heat 🔥, or water stress 💦.",
+  "chlorosis": "Yellow leaves 🍋 with green veins 💚 may indicate iron deficiency ⚠️. Use chelated iron 💊.",
+  "wilting": "Wilting 😔 can be due to over or underwatering 💦, heat stress 🔥, or pest damage 🐛.",
+  "sunburn": "Brown, crispy patches 🍂 = too much sun 🌞. Move to indirect light 🌤️.",
+
+  // ===== Pests & Diseases =====
+  "pests": "Check leaf undersides 🔎 for pests 🐛. Wipe with insecticidal soap 🧴 weekly until clear ✅.",
+  "bugs": "Look for aphids 🐜, spider mites 🕷️, mealybugs 🐛. Treat promptly ⚡ with soap 🧴, neem oil 🌿, or isolation 🚫.",
+  "fungus": "Fungal growth 🍄 = damp conditions 💦. Remove affected areas ✂️ and treat soil 🌱.",
+  "mold": "White mold 🍚 on soil 🌱 = overwatering 💦 or poor airflow 🌬️. Let soil dry 🌵 and improve ventilation 💨.",
+  "disease": "Discolored leaves 🍂 or stunted growth 🐢 may indicate disease ⚠️. Quarantine 🚫 and treat infected plants 🌱.",
+  "rootrot": "Soft, black roots 🖤 indicate rot 🪦. Remove affected roots ✂️ and repot in fresh soil 🌱.",
+  "scale": "Brown bumps 🟤 on stems 🌿 are scale insects 🐛. Scrape gently ✂️ and treat with neem oil 🌿.",
+  "mealybugs": "White fuzzy bugs 🐛 = mealybugs. Wipe with alcohol 🧴 or insecticidal soap 🧴.",
+
+  // ===== Propagation & Pruning =====
+  "propagation": "Many plants 🌿 can be propagated via cuttings ✂️. Use clean scissors ✂️ and place in water 💧 or moist soil 🌱.",
+  "pruning": "Trim dead or yellowing leaves ✂️ to encourage new growth 🌱 and improve air circulation 💨.",
+  "cuttings": "Take healthy cuttings ✂️ for propagation 🌱. Use rooting hormone 💊 for best results.",
+  "division": "Divide large clumping plants 🌿 during repotting 🪴 to encourage growth 🌱.",
+  "training": "Use stakes 🌿, trellises 🌱, or ties 🪢 to guide growth 🌿 of vines and tall plants 🏵️.",
+
+  // ===== Indoor & Outdoor Care =====
+  "indoorcare": "Keep plants 🌿 away from drafts ❄️, heaters 🔥, and AC vents ❄️. Monitor humidity 💧 and light 🌞.",
+  "outdoorcare": "Consider sunlight 🌞, temperature 🌡️, wind 🌬️, and pests 🐛 when placing plants outside 🌿.",
+  "seasonalcare": "Adjust watering 💦, light 🌞, and fertilization 🌱 depending on season 🗓️ and plant dormancy ❄️.",
+
+  // ===== Specific Plant Types =====
+  "succulents": "Succulents 🌵 need bright light 🌞 and well-draining soil 🏖️. Water sparingly 💧.",
+  "ferns": "Ferns 🌿 like high humidity 💧 and indirect light 🌤️. Keep soil evenly moist 🌱.",
+  "orchids": "Orchids 🌸 prefer bright, indirect light 🌞, well-draining bark mix 🌿, and high humidity 💧.",
+  "herbs": "Most herbs 🌿 like full sun 🌞 and well-draining soil 🏖️. Harvest leaves ✂️ to encourage growth 🌱.",
+  "vegetables": "Vegetables 🥕🍅 need fertile soil 🌱, consistent watering 💧, and full sun 🌞 for best yield 🍽️.",
+  "floweringplants": "Provide bright light 🌞, regular watering 💦, and balanced fertilizer 🌱 for flowers 🌸.",
+
+  // ===== Fallback =====
+  "unknown": "Sorry 🤔, I didn't understand that. Try asking about watering 💦, light 🌞, pests 🐛, or plant care tips 🌱."
+  
+};
+document.addEventListener('DOMContentLoaded', function() {
+  const chatLog=document.getElementById('aiChatLog');
+  const chatInput=document.getElementById('aiChatInput');
+  const chatSend=document.getElementById('aiChatSend');
+  function addBubble(text,who='ai'){
+    const b=document.createElement('div');
+    b.className=`bubble ${who==='user'?'user':'ai'}`;
+    b.innerHTML = text.replace(/\n/g,'<br>');
+    const wrap=document.createElement('div');
+    wrap.style.textAlign = who==='user'?'right':'left';
+    wrap.appendChild(b);
+    chatLog.appendChild(wrap);
+    chatLog.scrollTop=chatLog.scrollHeight;
+  }
+  function sendChat(){
+    const q=(chatInput.value||'').trim();
+    if(!q) { chatInput.focus(); return; }
+    addBubble(q,'user');
+    const lower=q.toLowerCase();
+    let reply = aiResponses.unknown;
+    for(const k in aiResponses){ if(lower.includes(k)){ reply=aiResponses[k]; break; } }
+    setTimeout(()=>{ addBubble(reply,'ai'); chatInput.value=''; chatInput.focus(); }, 300);
+  }
+  chatSend.addEventListener('click', sendChat);
+  chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
+  addBubble('Hi! I’m Planty. Ask me anything about your plant care.','ai');
+});
+
+// Tour functionality removed
+
+/* =========================
+   SETTINGS
+========================= */
+// resetApp handler is attached earlier with a guard
+
+/* =========================
+   INIT
+========================= */
+renderSuggestions();
+
+function updateBleUI(connected) {
+  bleConnected = !!connected;
+  if(bleSliderLabel) bleSliderLabel.textContent = connected ? 'Bluetooth: Connected' : 'Bluetooth: Disconnected';
+  if(bleConnectBtn) bleConnectBtn.textContent = connected ? 'Disconnect Bluetooth' : 'Connect Bluetooth';
+}
+
+// Attach connect button listener
+if(bleConnectBtn){
+  bleConnectBtn.addEventListener('click', ()=>{
+    const isConnected = !!(bleDevice?.gatt?.connected) || bleConnected;
+    if(isConnected){
+      disconnectBLE();
+    } else {
+      connectBLE();
+    }
+  });
+}
+
+/* =========================
+   SAVING / PERSISTENCE
+========================= */
+// updateUI will set lastReading so we can auto-save once per day
+function updateUI(tObj,lObj,sObj,hObj){
+  // tObj/lObj/sObj/hObj may be numbers or {value,unit}
+  const norm = (x, defaultUnit)=>{
+    if(x===undefined || x===null) return { value: null, unit: '' };
+    if(typeof x === 'object') return { value: Number(x.value), unit: x.unit||defaultUnit };
+    return { value: Number(x), unit: defaultUnit };
+  };
+  const t = norm(tObj, '°C');
+  const l = norm(lObj, 'lx');
+  const s = norm(sObj, '%');
+  const h = hObj ? norm(hObj, '%') : null;
+
+  lastReading = { t: t.value, tUnit: t.unit, l: l.value, lUnit: l.unit, s: s.value, sUnit: s.unit, h: (h? h.value : null), hUnit: (h? h.unit : ''), ts: new Date().toISOString() };
+
+  if(tempVal) tempVal.textContent = t.value;
+  if(lightVal) lightVal.textContent = l.value;
+  if(soilVal) soilVal.textContent = s.value;
+  if(h && !isNaN(Number(h.value)) && humidVal) humidVal.textContent = h.value;
+  if(typeof addPoint === 'function') addPoint(t,l,s,h);
+  // Attempt an auto-save for today if we haven't already
+  attemptAutoSaveForToday();
+}
+
+// Auto-save: if there's no saved reading for today, save the latest reading once per day
+function attemptAutoSaveForToday(){
+  if(!lastReading) return;
+  loadSavedReadings();
+  const today = getTodayStr();
+  if(savedReadings.length && savedReadings[savedReadings.length-1].date === today) return; // already saved today
+  // push today's reading as non-forced
+  const r = { date: today, t: lastReading.t, tUnit: lastReading.tUnit, l: lastReading.l, lUnit: lastReading.lUnit, s: lastReading.s, sUnit: lastReading.sUnit, h: lastReading.h, hUnit: lastReading.hUnit, forced:false };
+  savedReadings.push(r);
+  // limit to 7 days
+  if(savedReadings.length>7) savedReadings = savedReadings.slice(savedReadings.length-7);
+  saveSavedReadings();
+  renderSavedReadings();
+}
+
+// Force-save current reading with an optional note (called by Save Suggestion button)
+function forceSaveCurrentReading(note){
+  if(!lastReading) return false;
+  loadSavedReadings();
+  const today = getTodayStr();
+  const r = { date: today, t: lastReading.t, tUnit: lastReading.tUnit, l: lastReading.l, lUnit: lastReading.lUnit, s: lastReading.s, sUnit: lastReading.sUnit, h: lastReading.h, hUnit: lastReading.hUnit, forced:true, note: note||'' };
+  // If already an entry for today, replace it (we prefer the forced entry)
+  if(savedReadings.length && savedReadings[savedReadings.length-1].date === today){
+    savedReadings[savedReadings.length-1] = r;
+  }else{
+    savedReadings.push(r);
+  }
+  // keep last 7 only
+  if(savedReadings.length>7) savedReadings = savedReadings.slice(savedReadings.length-7);
+  saveSavedReadings();
+  renderSavedReadings();
+  return true;
+}
+
+// Update saveTipBtn to force-save current reading and also add a suggestion note
+if(saveTipBtn){
+  saveTipBtn.addEventListener('click',()=>{
+    const note = `Manual save by user at ${new Date().toLocaleString()}`;
+    const did = forceSaveCurrentReading(note);
+    if(did){
+      const s=`Saved reading: ${note}`;
+      suggestions.push(s);
+      if(savedDaysEl) savedDaysEl.textContent = savedReadings.length;
+      renderSuggestions();
+    } else {
+      alert('No live reading available to save. Connect a device first.');
+    }
+  });
+}
+
+// Initialize saved readings on load
+loadSavedReadings(); renderSavedReadings();
+// If we have saved readings from before, populate the dashboard with the most recent one so units appear immediately
+if(!lastReading && savedReadings.length){
+  const r = savedReadings[savedReadings.length-1];
+  try{
+    updateUI(
+      { value: r.t, unit: r.tUnit || '°C' },
+      { value: r.l, unit: r.lUnit || 'lx' },
+      { value: r.s, unit: r.sUnit || '%' },
+      (r.h !== undefined && r.h !== null) ? { value: r.h, unit: r.hUnit || '%' } : null
+    );
+  }catch(e){ console.warn('Failed to populate dashboard from saved reading:', e); }
+}
+
+// Ensure connection UI shows initial disconnected state and buttons are labeled
+try{
+  updateBleUI(false);
+  setStatus('Not connected', false);
+  if(serialConnectBtn) serialConnectBtn.textContent = serialPort ? 'Disconnect Serial' : 'Connect Serial';
+  if(bleConnectBtn) bleConnectBtn.textContent = (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) ? 'Disconnect Bluetooth' : 'Connect Bluetooth';
+}catch(e){ console.warn('Failed to initialize connection UI', e); }
+}
+</script>
+</body>
+</html>
